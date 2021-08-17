@@ -1,7 +1,7 @@
 # Scipy
 
 ## 点群から平面を求める
-leastsqを使って点群から平面方程式を得ます。leastsqは与えた評価関数の出力の2乗誤差を最小化します。
+leastsqを使って点群から平面方程式を得ます。leastsqは与えた評価関数の2乗和を最小化します。
 ### コード
 ~~~
 # Calcurates the equation of plane as 
