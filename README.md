@@ -55,20 +55,21 @@ def error(param,data):
   return np.abs(param.dot(vars))/den
 ~~~
 paramにて平面方程式の係数[a,b,c,d]、dataにて点群[[x0,y0,z0],[x1,y1,z1]....]を与えます。これは前述のleastsq呼出し時の第2、第3引数に当ります。paramは呼び出される度ごとに最適値に変化します。
-評価関数の戻り値はdataの１要素に対するスカラー量でなければなりません。ここでは戻り値として平面と点の距離を返します。公式はこれ。
+評価関数はdataの１要素に対するスカラー量でなければなりません。公式はこれ。
 ![平面と点の距離公式](img/eq1.png)
+ここでは戻り値として平面と点の距離をリストにして返します。
 ~~~
 den=np.linalg.norm(param[:3])
 ~~~
-距離公式の分母です。paramの3番目まで[a,b,c]のノルムなので、normを使って表現しています。
+距離公式の分母です。paramの3番目まで[a,b,c]のノルムなので、normを使って記述しています。
 ~~~
 vars=np.vstack((data.T,np.ones(len(data))))
 return np.abs(param.dot(vars))/den
 ~~~
-分子はベタに書いても書けますが、[a,b,c,d]と[[x],[y],[z],[1]]の内積()でオシャレに表現しています。
+分子はベタに書いても書けますが、[a,b,c,d]と[[x],[y],[z],[1]]の内積(.dot)でオシャレに記述しています。
 
 ## ロボットキャリブレーション
-たぶんTsai法と同じだとは思いますが・・・
+たぶんTsai法と同じ・・・
 ### コード
 ~~~
 #!/usr/bin/env python3
@@ -126,3 +127,18 @@ def solve(M,P):
   RT=np.vstack((np.hstack((R,T)),np.array([0,0,0,1]).reshape((1,4))))
   return RT
 ~~~
+### 入力データ  
+Mがロボット位置姿勢(ベース)、Pがボードの位置姿勢(カメラ)です。それぞれ１要素は直交座標とQuaternionで[x,y,z,Qx,Qy,Qz,Qw]のように表現され、この配列(数か所から撮影した結果)が入力です。
+
+### 評価関数  
+ロボットの位置姿勢が変わってもボード位置姿勢は不動、という条件を使います。ボード(添え字P)の位置姿勢は  
+<sup>B</sup>T<sub>P</sub>=<sup>B</sup>T<sub>M</sub><sup>M</sup>T<sub>C</sub><sup>C</sup>T<sub>P</sub>  
+となります。2つのこの式の入力の差を評価関数の戻り値とします。
+
+### 入力データ組み合わせ
+~~~
+mat=np.hstack((Mn,Pn))
+Cmat=np.asarray(list(itertools.combinations(mat,2)))
+~~~
+matは、撮影箇所ごとのＭ,Ｐをくっつけた配列です。撮影箇所がＮあれば(N,14)の配列です。
+ひとつの評価値を得るには２箇所のデータが必要なので、matから[M<sub>i</sub>,P<sub>i</sub>,M<sub>j</sub>,P<sub>j</sub>]を作ります。Ｎ個のデータがあれば<sub>N</sub>C<sub>2</sub>のデータ組が得られます。<sub>N</sub>C<sub>2</sub>はitertoolsのcombinationにて記述できます。
